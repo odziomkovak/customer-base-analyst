@@ -35,4 +35,7 @@ return [
         ],
     ],
 
+    'geocodio' => [
+        'key' => env('GEOCODIO_API_KEY'),
+    ],
 ];
