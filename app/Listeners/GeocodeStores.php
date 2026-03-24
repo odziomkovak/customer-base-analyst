@@ -5,9 +5,8 @@ namespace App\Listeners;
 use App\Events\StoresImported;
 use App\Models\Store;
 use App\Services\GeocodioService;
-use Illuminate\Contracts\Queue\ShouldQueue;
 
-class GeocodeStores implements ShouldQueue
+class GeocodeStores
 {
     public function __construct(private readonly GeocodioService $geocodio) {}
 

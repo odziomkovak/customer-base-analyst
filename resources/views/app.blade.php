@@ -32,6 +32,15 @@
             <span class="text-xs text-gray-400">CSV up to 10 MB</span>
             <input type="file" accept=".csv" class="sr-only" @change="upload($event)">
         </label>
+
+        @if($hasStores)
+            <button
+                @click="startAnalysis()"
+                class="mt-4 w-full rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 cursor-pointer"
+            >
+                Analyze existing data
+            </button>
+        @endif
     </div>
 
     <div x-show="importing" x-cloak class="rounded-xl border border-gray-200 bg-white p-8">
@@ -69,7 +78,7 @@
         </div>
     </div>
 
-    <div x-show="done" x-cloak class="rounded-xl border border-gray-200 bg-white p-8 prose prose-indigo max-w-none" x-html="analysisHtml"></div>
+    <div x-show="analysing || done" x-cloak class="rounded-xl border border-gray-200 bg-white p-8 prose prose-indigo max-w-none" x-html="analysisHtml"></div>
 
 </div>
 
@@ -82,6 +91,9 @@
             progress: 0,
             analysisHtml: '',
             dragging: false,
+            _buffer: '',
+            _typing: false,
+            _streamDone: false,
 
             async upload(e) {
                 const file = e.target.files[0];
@@ -104,6 +116,66 @@
                 } finally {
                     this.importing = false;
                 }
+
+                this.startAnalysis();
+            },
+
+            startAnalysis() {
+                this.analysing = true;
+                this.analysisHtml = '';
+
+                const es = new EventSource('/analysis/stream');
+                es.onmessage = (e) => {
+                    if (e.data === '[DONE]') {
+                        this._streamDone = true;
+                        this._drainBuffer();
+                        es.close();
+                        return;
+                    }
+
+                    const event = JSON.parse(e.data);
+                    if (event.type === 'text_delta') {
+                        this._buffer += event.delta;
+                        this._drainBuffer();
+                    }
+                };
+                es.onerror = () => {
+                    this._streamDone = true;
+                    es.close();
+                    this._drainBuffer();
+                };
+            },
+
+            _drainBuffer() {
+                if (this._typing) return;
+                this._typing = true;
+
+                const step = () => {
+                    if (this._buffer.length === 0) {
+                        this._typing = false;
+                        if (this._streamDone) {
+                            this.analysing = false;
+                            this.done = true;
+                        }
+                        return;
+                    }
+
+                    // Flush HTML tags instantly to avoid rendering broken markup
+                    if (this._buffer[0] === '<') {
+                        const tagEnd = this._buffer.indexOf('>');
+                        if (tagEnd !== -1) {
+                            this.analysisHtml += this._buffer.slice(0, tagEnd + 1);
+                            this._buffer = this._buffer.slice(tagEnd + 1);
+                        }
+                    } else {
+                        this.analysisHtml += this._buffer[0];
+                        this._buffer = this._buffer.slice(1);
+                    }
+
+                    requestAnimationFrame(step);
+                };
+
+                step();
             },
         }
     }
