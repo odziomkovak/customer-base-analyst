@@ -2,6 +2,8 @@
 
 A Laravel application that analyzes Starbucks store demographics by combining CSV data imports, geocoding enrichment via Geocodio, and AI-powered insights using Claude.
 
+<video src="public/Screen_Recording.mp4" controls></video>
+
 ## Features
 
 - **CSV Import** — Upload store location data (address, city, state, postcode, ownership type) via drag-and-drop
