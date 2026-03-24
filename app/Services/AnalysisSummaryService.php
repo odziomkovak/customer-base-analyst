@@ -82,7 +82,18 @@ class AnalysisSummaryService
             $selects[] = DB::raw('COUNT('.$metric.') as '.$metric.'_count');
         }
 
-        return (array) $query->select($selects)->first();
+        $row = $query->select($selects)->first();
+
+        if ($row === null) {
+            return array_fill_keys(
+                array_merge(
+                    ...array_map(fn (string $m) => [$m.'_avg', $m.'_min', $m.'_max', $m.'_count'], self::METRICS)
+                ),
+                0,
+            );
+        }
+
+        return $row->toArray();
     }
 
     private function queryMedian(Builder $query, string $metric): float
