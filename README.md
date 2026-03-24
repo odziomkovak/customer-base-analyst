@@ -2,7 +2,7 @@
 
 A Laravel application that analyzes Starbucks store demographics by combining CSV data imports, geocoding enrichment via Geocodio, and AI-powered insights using Claude.
 
-<video src="public/Screen_Recording.mp4" controls></video>
+https://github.com/user-attachments/assets/1d11c1eb-0a6d-42bf-b423-4f6b24858fb9
 
 ## Features
 
